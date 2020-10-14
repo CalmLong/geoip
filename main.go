@@ -7,6 +7,7 @@ package main
 
 import (
 	"encoding/csv"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -109,21 +110,32 @@ func getPrivateIPs() *router.GeoIP {
 }
 
 func main() {
-	getSrc()
-	ccMap, err := getCountryCodeMap()
-	if err != nil {
-		fmt.Println("Error reading country code map:", err)
-		os.Exit(1)
-	}
+	cn := flag.Bool("c", false, "only output cn ips")
+	flag.Parse()
 	
 	cidrList := make(map[string][]*router.CIDR)
-	if err := getCidrPerCountry(srcV4, ccMap, cidrList); err != nil {
-		fmt.Println("Error loading IPv4 file:", err)
-		os.Exit(1)
-	}
-	if err := getCidrPerCountry(srcV6, ccMap, cidrList); err != nil {
-		fmt.Println("Error loading IPv6 file:", err)
-		os.Exit(1)
+	
+	if !*cn {
+		getSrc()
+		ccMap, err := getCountryCodeMap()
+		if err != nil {
+			fmt.Println("Error reading country code map:", err)
+			os.Exit(1)
+		}
+		
+		if err := getCidrPerCountry(srcV4, ccMap, cidrList); err != nil {
+			fmt.Println("Error loading IPv4 file:", err)
+			os.Exit(1)
+		}
+		if err := getCidrPerCountry(srcV6, ccMap, cidrList); err != nil {
+			fmt.Println("Error loading IPv6 file:", err)
+			os.Exit(1)
+		}
+	} else {
+		if err := getCnIPs(cidrList); err != nil {
+			fmt.Println("Error getCnIPs: ", err)
+			os.Exit(1)
+		}
 	}
 	
 	geoIPList := new(router.GeoIPList)

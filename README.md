@@ -20,6 +20,14 @@ export MAX_MIND_KEY=YOUR_KEY
 
 * 可识别 `http_proxy` 环境变量
 
+### CN IPs
+
+使用参数 `-c` 为 `true` 时仅输出大陆内的 IP 且无需 `MaxMind` 秘钥
+
+```bash
+./geoip -c true
+```
+
 ## 使用
 
 和官方版本不同的是使用本工具输出的 `geoip.dat` 仅包含以下
@@ -50,3 +58,4 @@ export MAX_MIND_KEY=YOUR_KEY
 ## 引用以下项目
 
 * [github.com/v2fly/geoip](https://github.com/v2fly/geoip)
+* [github.com/metowolf/iplist](https://github.com/metowolf/iplist)
