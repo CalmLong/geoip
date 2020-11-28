@@ -1,15 +1,11 @@
-// GeoIP generator
-//
-// Before running this file, the GeoIP database must be downloaded and present.
-// To download GeoIP database: https://dev.maxmind.com/geoip/geoip2/geolite2/
-// Inside you will find block files for IPv4 and IPv6 and country code mapping.
 package main
 
 import (
-	"encoding/csv"
-	"flag"
+	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,56 +38,30 @@ var privateIPs = []string{
 	"fe80::/10",
 }
 
-func getCountryCodeMap() (map[string]string, error) {
-	countryCodeReader, err := os.Open(srcLang)
-	if err != nil {
-		return nil, err
-	}
-	defer countryCodeReader.Close()
-	
-	m := make(map[string]string)
-	reader := csv.NewReader(countryCodeReader)
-	lines, err := reader.ReadAll()
-	if err != nil {
-		return nil, err
-	}
-	for _, line := range lines[1:] {
-		id := line[0]
-		countryCode := line[4]
-		if len(countryCode) == 0 {
-			continue
+func getCidrPerCountry(country []string, list map[string][]*router.CIDR) error {
+	for _, code := range country {
+		countryStr := filepath.Join(pwd, ipData, code+".txt")
+		if strings.EqualFold(code, "CN") {
+			countryStr = filepath.Join(pwd, ipDataCN)
 		}
-		m[id] = strings.ToUpper(countryCode)
-	}
-	return m, nil
-}
-
-func getCidrPerCountry(file string, m map[string]string, list map[string][]*router.CIDR) error {
-	fileReader, err := os.Open(file)
-	if err != nil {
-		return err
-	}
-	defer fileReader.Close()
-	
-	reader := csv.NewReader(fileReader)
-	lines, err := reader.ReadAll()
-	if err != nil {
-		return err
-	}
-	for _, line := range lines[1:] {
-		cidrStr := line[0]
-		countryID := line[1]
-		if countryCode, found := m[countryID]; found {
-			if !strings.EqualFold(countryCode, "CN") {
-				countryCode = "NCN"
+		countryIps, err := os.Open(countryStr)
+		if err != nil {
+			return err
+		}
+		cidr := bufio.NewReader(countryIps)
+		for {
+			cidrStr, _, err := cidr.ReadLine()
+			if err == io.EOF {
+				break
 			}
-			cidr, err := conf.ParseIP(cidrStr)
+			cidr, err := conf.ParseIP(string(cidrStr))
 			if err != nil {
 				return err
 			}
-			cidrs := append(list[countryCode], cidr)
-			list[countryCode] = cidrs
+			cidrs := append(list[code], cidr)
+			list[code] = cidrs
 		}
+		countryIps.Close()
 	}
 	return nil
 }
@@ -110,32 +80,28 @@ func getPrivateIPs() *router.GeoIP {
 }
 
 func main() {
-	cn := flag.Bool("c", false, "only output cn ips")
-	flag.Parse()
+	var err error
+	pwd, err = os.Getwd()
+	if err != nil {
+		log.Fatal("get pwd: ", err)
+	}
 	
 	cidrList := make(map[string][]*router.CIDR)
 	
-	if !*cn {
-		getSrc()
-		ccMap, err := getCountryCodeMap()
-		if err != nil {
-			fmt.Println("Error reading country code map:", err)
-			os.Exit(1)
-		}
-		
-		if err := getCidrPerCountry(srcV4, ccMap, cidrList); err != nil {
-			fmt.Println("Error loading IPv4 file:", err)
-			os.Exit(1)
-		}
-		if err := getCidrPerCountry(srcV6, ccMap, cidrList); err != nil {
-			fmt.Println("Error loading IPv6 file:", err)
-			os.Exit(1)
-		}
-	} else {
-		if err := getCnIPs(cidrList); err != nil {
-			fmt.Println("Error getCnIPs: ", err)
-			os.Exit(1)
-		}
+	if err := getFile(); err != nil {
+		log.Fatal("getFile: ", err)
+	}
+	if err := unzip(); err != nil {
+		log.Fatal("unzip: ", err)
+	}
+	
+	ccMap, err := getCountryList()
+	if err != nil {
+		log.Fatal("getCountryList: ", err)
+	}
+	
+	if err := getCidrPerCountry(ccMap, cidrList); err != nil {
+		log.Fatal("getCidrPerCountry: ", err)
 	}
 	
 	geoIPList := new(router.GeoIPList)
@@ -156,10 +122,9 @@ func main() {
 	if err := ioutil.WriteFile("geoip.dat", geoIPBytes, 0644); err != nil {
 		fmt.Println("Error writing geoip to file:", err)
 		os.Exit(1)
-	} else {
-		fmt.Println("geoip.dat has been generated successfully in the directory.")
 	}
 	
-	_ = os.RemoveAll(filepath.Join(pwd, srcName))
-	_ = os.RemoveAll(srcFile)
+	fmt.Println("geoip.dat has been generated successfully in the directory.")
+	_ = os.RemoveAll(filepath.Join(pwd, ipSrcName))
+	_ = os.RemoveAll(filepath.Join(pwd, ipSrcFileName))
 }
