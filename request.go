@@ -27,20 +27,28 @@ func Transport() *http.Transport {
 	}
 }
 
+func newHTTPGet(uri string) (io.Reader, error) {
+	request, err := http.NewRequest(http.MethodGet, uri, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := req.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Body, nil
+}
+
 func getFile() error {
 	_ = os.RemoveAll(ipSrcFileName)
 	fi, err := os.OpenFile(ipSrcFileName, os.O_RDWR|os.O_CREATE, os.ModePerm)
 	if err != nil {
 		return err
 	}
-	request, err := http.NewRequest(http.MethodGet, ipSrc, nil)
+	body, err := newHTTPGet(ipSrc)
 	if err != nil {
 		return err
 	}
-	resp, err := req.Do(request)
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(fi, resp.Body)
-	return resp.Body.Close()
+	_, err = io.Copy(fi, body)
+	return err
 }

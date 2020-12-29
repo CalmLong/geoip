@@ -16,6 +16,8 @@
 
 包含[这些](https://github.com/metowolf/iplist/blob/master/docs/country.md)国家的和地区的 IP 数据，对于大陆则使用[简化版](https://github.com/metowolf/iplist#%E5%A4%A7%E9%99%86-ip-%E6%AE%B5)的数据
 
+其中 `CN` 标签包含 `IPv4` 和 `IPv6` 数据
+
 ### 示例配置
 
 ```json
@@ -41,3 +43,4 @@
 
 * [github.com/metowolf/iplist](https://github.com/metowolf/iplist)
 * [github.com/v2fly/v2ray-core](https://github.com/v2fly/v2ray-core)
+* [github.com/gaoyifan/china-operator-ip](https://github.com/gaoyifan/china-operator-ip)

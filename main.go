@@ -38,10 +38,32 @@ var privateIPs = []string{
 	"fe80::/10",
 }
 
+func getChinaIPv6IPs(list map[string][]*router.CIDR) {
+	for _, ip := range ipv6s {
+		body, err := newHTTPGet(ip)
+		if err != nil {
+			log.Fatalln("getChinaIPv6IPs err: ", err)
+		}
+		buff := bufio.NewReader(body)
+		for {
+			s, _, e := buff.ReadLine()
+			if e == io.EOF {
+				break
+			}
+			cidr, err := conf.ParseIP(string(s))
+			if err != nil {
+				continue
+			}
+			cidrs := append(list[countryCN], cidr)
+			list[countryCN] = cidrs
+		}
+	}
+}
+
 func getCidrPerCountry(country []string, list map[string][]*router.CIDR) error {
 	for _, code := range country {
 		countryStr := filepath.Join(pwd, ipData, code+".txt")
-		if strings.EqualFold(code, "CN") {
+		if strings.EqualFold(code, countryCN) {
 			countryStr = filepath.Join(pwd, ipDataCN)
 		}
 		countryIps, err := os.Open(countryStr)
@@ -63,6 +85,7 @@ func getCidrPerCountry(country []string, list map[string][]*router.CIDR) error {
 		}
 		countryIps.Close()
 	}
+	getChinaIPv6IPs(list)
 	return nil
 }
 
