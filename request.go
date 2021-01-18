@@ -3,9 +3,9 @@ package main
 import (
 	"crypto/tls"
 	"io"
+	"log"
 	"net"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -28,6 +28,7 @@ func Transport() *http.Transport {
 }
 
 func newHTTPGet(uri string) (io.Reader, error) {
+	log.Println(uri)
 	request, err := http.NewRequest(http.MethodGet, uri, nil)
 	if err != nil {
 		return nil, err
@@ -37,18 +38,4 @@ func newHTTPGet(uri string) (io.Reader, error) {
 		return nil, err
 	}
 	return resp.Body, nil
-}
-
-func getFile() error {
-	_ = os.RemoveAll(ipSrcFileName)
-	fi, err := os.OpenFile(ipSrcFileName, os.O_RDWR|os.O_CREATE, os.ModePerm)
-	if err != nil {
-		return err
-	}
-	body, err := newHTTPGet(ipSrc)
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(fi, body)
-	return err
 }
