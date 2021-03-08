@@ -2,14 +2,14 @@ package main
 
 import (
 	"bufio"
+	"github.com/v2fly/v2ray-core/v4/common"
+	"github.com/v2fly/v2ray-core/v4/infra/conf"
 	"io"
 	"io/ioutil"
 	"log"
 	
 	"github.com/golang/protobuf/proto"
-	"v2ray.com/core/app/router"
-	"v2ray.com/core/common"
-	"v2ray.com/core/infra/conf"
+	"github.com/v2fly/v2ray-core/v4/app/router"
 )
 
 var privateIPs = []string{
