@@ -1,6 +1,6 @@
-# GeoIP for V2Ray
+# GeoIP
 
-适用于 V2Ray 的 IP 数据库
+仅包含 CN 的 `IPv4` 和 `IPv6` 数据
 
 ## 运行
 
@@ -13,8 +13,6 @@
 * 可识别 `https_proxy` 环境变量
 
 ## 使用
-
-仅包含 CN 的 `IPv4` 和 `IPv6` 数据
 
 ### 示例配置
 
