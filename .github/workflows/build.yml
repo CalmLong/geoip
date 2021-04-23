@@ -23,12 +23,10 @@ jobs:
           
       - name: Checkout codebase
         uses: actions/checkout@v2.3.4
-        with:
-          path: code
 
       - name: Build geoip.dat file
         run: |
-          go run ./
+          go run main.go
   
       - name: Git push assets to "release" branch
         run: |
