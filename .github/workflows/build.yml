@@ -33,8 +33,14 @@ jobs:
         run: |
           go run geoip
   
+      - name: Move files to publish directory
+        run: |
+          mkdir -p publish
+          mv geoip.dat ./publish
+  
       - name: Git push assets to "release" branch
         run: |
+          cd publish || exit 1
           git init
           git config --local user.name "github-actions[bot]"
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -43,3 +49,7 @@ jobs:
           git commit -m "${{ env.RELEASE_NAME }}"
           git remote add geoip "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           git push -f geoip release
+
+      - name: Delete publish directory
+        run: |
+          rm -rf  publish
