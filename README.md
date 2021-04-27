@@ -12,6 +12,8 @@
 
 * 可识别 `https_proxy` 环境变量
 
+现在可以通过 [release](https://github.com/CalmLong/geoip/tree/release) 分支下载已经输出的文件，由 Github Action 每日 UTC+08:00 2 点自动构建
+
 ## 使用
 
 ### 示例配置
