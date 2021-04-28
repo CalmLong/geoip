@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 	"time"
 	
 	"github.com/v2fly/v2ray-core/v4/app/router"
@@ -77,6 +78,24 @@ func getChinaCidr(list map[string][]*router.CIDR) {
 	getChinaIPsFromRawUrl(ipv6s, list)
 }
 
+func getIP2Clash(ipSrc *router.CIDR) string {
+	const (
+		ruleV4 = "  - IP-CIDR,%s/%d\n"
+		ruleV6 = "  - IP-CIDR6,%s/%d\n"
+	)
+	ip := net.IPAddress(ipSrc.GetIp())
+	if ip.Family().IsIPv4() {
+		return fmt.Sprintf(ruleV4, net.IPAddress(ipSrc.GetIp()).String(), ipSrc.Prefix)
+	}
+	if ip.Family().IsIPv6() {
+		ips := net.IPAddress(ipSrc.GetIp()).String()
+		ips = strings.TrimPrefix(ips, "[")
+		ips = strings.TrimSuffix(ips, "]")
+		return fmt.Sprintf(ruleV6, ips, ipSrc.Prefix)
+	}
+	return ""
+}
+
 func getPrivateIPs() *router.GeoIP {
 	cidr := make([]*router.CIDR, 0, len(privateIPs))
 	for _, ip := range privateIPs {
@@ -110,18 +129,19 @@ func main() {
 	switch *fF {
 	case "clash":
 		ips := make([]string, 0)
-		const rule = "  - IP-CIDR,%s/%d\n"
 		
-		for _, ip := range getPrivateIPs().GetCidr() {
-			ipStr := fmt.Sprintf(rule, net.IPAddress(ip.GetIp()).String(), ip.Prefix)
-			ips = append(ips, ipStr)
+		for _, ipSrc := range getPrivateIPs().GetCidr() {
+			if ip := getIP2Clash(ipSrc); ip != "" {
+				ips = append(ips, ip)
+			}
 		}
 		
 		for _, geo := range geoIPList.GetEntry() {
 			if geo.GetCountryCode() == countryCN {
-				for _, ip := range geo.GetCidr() {
-					ipStr := fmt.Sprintf(rule, net.IPAddress(ip.GetIp()).String(), ip.Prefix)
-					ips = append(ips, ipStr)
+				for _, ipSrc := range geo.GetCidr() {
+					if ip := getIP2Clash(ipSrc); ip != "" {
+						ips = append(ips, ip)
+					}
 				}
 			}
 		}
