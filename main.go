@@ -110,7 +110,7 @@ func main() {
 	switch *fF {
 	case "clash":
 		ips := make([]string, 0)
-		const rule = "  - IP-CIDR,%s/%d,DIRECT\n"
+		const rule = "  - IP-CIDR,%s/%d\n"
 		
 		for _, ip := range getPrivateIPs().GetCidr() {
 			ipStr := fmt.Sprintf(rule, net.IPAddress(ip.GetIp()).String(), ip.Prefix)
