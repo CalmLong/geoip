@@ -2,13 +2,19 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"flag"
+	"fmt"
+	"github.com/golang/protobuf/proto"
 	"github.com/v2fly/v2ray-core/v4/common"
+	"github.com/v2fly/v2ray-core/v4/common/net"
 	"github.com/v2fly/v2ray-core/v4/infra/conf"
 	"io"
 	"io/ioutil"
 	"log"
+	"os"
+	"time"
 	
-	"github.com/golang/protobuf/proto"
 	"github.com/v2fly/v2ray-core/v4/app/router"
 )
 
@@ -55,6 +61,17 @@ func getChinaIPsFromRawUrl(ipUrls []string, list map[string][]*router.CIDR) {
 	}
 }
 
+func pickWriter(header []string, name string, items []string) error {
+	buff := bytes.NewBuffer([]byte{})
+	for _, h := range header {
+		buff.WriteString(h)
+	}
+	for _, item := range items {
+		buff.WriteString(item)
+	}
+	return ioutil.WriteFile(name, buff.Bytes(), os.ModePerm)
+}
+
 func getChinaCidr(list map[string][]*router.CIDR) {
 	getChinaIPsFromRawUrl(ipv4s, list)
 	getChinaIPsFromRawUrl(ipv6s, list)
@@ -74,8 +91,10 @@ func getPrivateIPs() *router.GeoIP {
 }
 
 func main() {
-	cidrList := make(map[string][]*router.CIDR)
+	fF := flag.String("F", "", "")
+	flag.Parse()
 	
+	cidrList := make(map[string][]*router.CIDR)
 	getChinaCidr(cidrList)
 	
 	geoIPList := new(router.GeoIPList)
@@ -85,14 +104,43 @@ func main() {
 			Cidr:        cidr,
 		})
 	}
-	geoIPList.Entry = append(geoIPList.Entry, getPrivateIPs())
 	
-	geoIPBytes, err := proto.Marshal(geoIPList)
-	if err != nil {
-		log.Fatalln("error marshalling geoip list:", err)
+	t := time.Now().Format("2006-01-02 15:04:05")
+	
+	switch *fF {
+	case "clash":
+		ips := make([]string, 0)
+		const rule = "  - IP-CIDR,%s/%d,DIRECT\n"
+		
+		for _, ip := range getPrivateIPs().GetCidr() {
+			ipStr := fmt.Sprintf(rule, net.IPAddress(ip.GetIp()).String(), ip.Prefix)
+			ips = append(ips, ipStr)
+		}
+		
+		for _, geo := range geoIPList.GetEntry() {
+			if geo.GetCountryCode() == countryCN {
+				for _, ip := range geo.GetCidr() {
+					ipStr := fmt.Sprintf(rule, net.IPAddress(ip.GetIp()).String(), ip.Prefix)
+					ips = append(ips, ipStr)
+				}
+			}
+		}
+		
+		header := []string{"# TIME: ", t, "\n", "payload:", "\n"}
+		if err := pickWriter(header, "geoip.yaml", ips); err != nil {
+			log.Fatalln("pickWriter err: ", err)
+		}
+	default:
+		geoIPList.Entry = append(geoIPList.Entry, getPrivateIPs())
+		
+		geoIPBytes, err := proto.Marshal(geoIPList)
+		if err != nil {
+			log.Fatalln("error marshalling geoip list:", err)
+		}
+		if err := ioutil.WriteFile("geoip.dat", geoIPBytes, 0644); err != nil {
+			log.Fatalln("error writing geoip to file:", err)
+		}
 	}
-	if err := ioutil.WriteFile("geoip.dat", geoIPBytes, 0644); err != nil {
-		log.Fatalln("error writing geoip to file:", err)
-	}
-	log.Println("geoip.dat has been generated successfully in the directory.")
+	
+	log.Println("geoip has been generated successfully in the directory.")
 }
