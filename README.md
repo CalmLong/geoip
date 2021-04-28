@@ -14,6 +14,13 @@
 
 现在可以通过 [release](https://github.com/CalmLong/geoip/tree/release) 分支下载已经输出的文件，由 Github Action 每日 UTC+08:00 2 点自动构建
 
+### 命令参数
+
+所有参数默认为关闭状态
+
+* `-F` 按应用程序输出格式
+    * `clash`
+
 ## 使用
 
 ### 示例配置
