@@ -8,7 +8,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/v2fly/v2ray-core/v4/common"
 	"github.com/v2fly/v2ray-core/v4/common/net"
-	"github.com/v2fly/v2ray-core/v4/infra/conf"
+	"github.com/v2fly/v2ray-core/v4/infra/conf/rule"
 	"io"
 	"io/ioutil"
 	"log"
@@ -52,7 +52,7 @@ func getChinaIPsFromRawUrl(ipUrls []string, list map[string][]*router.CIDR) {
 			if e == io.EOF {
 				break
 			}
-			cidr, err := conf.ParseIP(string(s))
+			cidr, err := rule.ParseIP(string(s))
 			if err != nil {
 				continue
 			}
@@ -99,7 +99,7 @@ func getIP2Clash(ipSrc *router.CIDR) string {
 func getPrivateIPs() *router.GeoIP {
 	cidr := make([]*router.CIDR, 0, len(privateIPs))
 	for _, ip := range privateIPs {
-		c, err := conf.ParseIP(ip)
+		c, err := rule.ParseIP(ip)
 		common.Must(err)
 		cidr = append(cidr, c)
 	}
