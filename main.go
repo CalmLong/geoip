@@ -65,10 +65,10 @@ func getChinaIPsFromRawUrl(ipUrls []string, list map[string][]*router.CIDR) {
 func pickWriter(header []string, name string, items []string) error {
 	buff := bytes.NewBuffer([]byte{})
 	for _, h := range header {
-		buff.WriteString(h)
+		buff.WriteString(h + "\n")
 	}
 	for _, item := range items {
-		buff.WriteString(item)
+		buff.WriteString(item + "\n")
 	}
 	return ioutil.WriteFile(name, buff.Bytes(), os.ModePerm)
 }
@@ -78,20 +78,32 @@ func getChinaCidr(list map[string][]*router.CIDR) {
 	getChinaIPsFromRawUrl(ipv6s, list)
 }
 
-func getIP2Clash(ipSrc *router.CIDR) string {
-	const (
-		ruleV4 = "  - IP-CIDR,%s/%d\n"
-		ruleV6 = "  - IP-CIDR6,%s/%d\n"
-	)
+func getIP(ipSrc *router.CIDR) string {
+	const ipCIDR = "%s/%d"
 	ip := net.IPAddress(ipSrc.GetIp())
 	if ip.Family().IsIPv4() {
-		return fmt.Sprintf(ruleV4, net.IPAddress(ipSrc.GetIp()).String(), ipSrc.Prefix)
+		return fmt.Sprintf(ipCIDR, net.IPAddress(ipSrc.GetIp()).String(), ipSrc.Prefix)
 	}
 	if ip.Family().IsIPv6() {
 		ips := net.IPAddress(ipSrc.GetIp()).String()
 		ips = strings.TrimPrefix(ips, "[")
 		ips = strings.TrimSuffix(ips, "]")
-		return fmt.Sprintf(ruleV6, ips, ipSrc.Prefix)
+		return fmt.Sprintf(ipCIDR, ips, ipSrc.Prefix)
+	}
+	return ""
+}
+
+func getIP2Clash(ipSrc *router.CIDR) string {
+	const (
+		ruleV4 = "  - IP-CIDR,%s"
+		ruleV6 = "  - IP-CIDR6,%s"
+	)
+	ip := net.IPAddress(ipSrc.GetIp())
+	if ip.Family().IsIPv4() {
+		return fmt.Sprintf(ruleV4, getIP(ipSrc))
+	}
+	if ip.Family().IsIPv6() {
+		return fmt.Sprintf(ruleV6, getIP(ipSrc))
 	}
 	return ""
 }
@@ -145,9 +157,25 @@ func main() {
 				}
 			}
 		}
-		
-		header := []string{"# TIME: ", t, "\n", "payload:", "\n"}
+		header := []string{"# TIME: " + t, "payload:"}
 		if err := pickWriter(header, "geoip.yaml", ips); err != nil {
+			log.Fatalln("pickWriter err: ", err)
+		}
+	case "ip":
+		ips := make([]string, 0)
+		for _, ipSrc := range getPrivateIPs().GetCidr() {
+			ips = append(ips, getIP(ipSrc))
+		}
+		for _, geo := range geoIPList.GetEntry() {
+			if geo.GetCountryCode() == countryCN {
+				for _, ipSrc := range geo.GetCidr() {
+					if ip := getIP(ipSrc); ip != "" {
+						ips = append(ips, ip)
+					}
+				}
+			}
+		}
+		if err := pickWriter(nil, "geoip.txt", ips); err != nil {
 			log.Fatalln("pickWriter err: ", err)
 		}
 	default:
