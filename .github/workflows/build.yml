@@ -32,14 +32,14 @@ jobs:
       - name: Build geoip file
         run: |
           go run geoip
-          go run geoip -F=clash
+          go run geoip -F=clashP
           go run geoip -F=ip
   
       - name: Move files to publish directory
         run: |
           mkdir -p publish
           mv geoip.dat ./publish
-          mv geoip.yaml ./publish
+          mv clashP.yaml ./publish
           mv geoip.txt ./publish
   
       - name: Git push assets to "release" branch
