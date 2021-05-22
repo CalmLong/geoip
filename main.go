@@ -1,20 +1,11 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	"flag"
-	"fmt"
 	"github.com/golang/protobuf/proto"
-	"github.com/v2fly/v2ray-core/v4/common"
-	"github.com/v2fly/v2ray-core/v4/common/net"
 	"github.com/v2fly/v2ray-core/v4/infra/conf/rule"
-	"io"
 	"io/ioutil"
 	"log"
-	"os"
-	"strings"
-	"time"
 	
 	"github.com/v2fly/v2ray-core/v4/app/router"
 )
@@ -40,94 +31,39 @@ var privateIPs = []string{
 	"fe80::/10",
 }
 
-func getChinaIPsFromRawUrl(ipUrls []string, list map[string][]*router.CIDR) {
-	for _, ip := range ipUrls {
-		body, err := newHTTPGet(ip)
-		if err != nil {
-			log.Fatalln("getChinaIPsFromRawUrl err:", err)
-		}
-		buff := bufio.NewReader(body)
-		for {
-			s, _, e := buff.ReadLine()
-			if e == io.EOF {
-				break
-			}
-			cidr, err := rule.ParseIP(string(s))
-			if err != nil {
-				continue
-			}
-			cidrs := append(list[countryCN], cidr)
-			list[countryCN] = cidrs
-		}
+func ipGeoIP() {
+	if err := writer2File(nil, "geoip.txt", ipV4, ipV6); err != nil {
+		log.Fatalln("writer2File err: ", err)
 	}
 }
 
-func pickWriter(header []string, name string, items []string) error {
-	buff := bytes.NewBuffer([]byte{})
-	for _, h := range header {
-		buff.WriteString(h + "\n")
-	}
-	for _, item := range items {
-		buff.WriteString(item + "\n")
-	}
-	return ioutil.WriteFile(name, buff.Bytes(), os.ModePerm)
-}
-
-func getChinaCidr(list map[string][]*router.CIDR) {
-	getChinaIPsFromRawUrl(ipv4s, list)
-	getChinaIPsFromRawUrl(ipv6s, list)
-}
-
-func getIP(ipSrc *router.CIDR) string {
-	const ipCIDR = "%s/%d"
-	ip := net.IPAddress(ipSrc.GetIp())
-	if ip.Family().IsIPv4() {
-		return fmt.Sprintf(ipCIDR, net.IPAddress(ipSrc.GetIp()).String(), ipSrc.Prefix)
-	}
-	if ip.Family().IsIPv6() {
-		ips := net.IPAddress(ipSrc.GetIp()).String()
-		ips = strings.TrimPrefix(ips, "[")
-		ips = strings.TrimSuffix(ips, "]")
-		return fmt.Sprintf(ipCIDR, ips, ipSrc.Prefix)
-	}
-	return ""
-}
-
-func getIP2Clash(ipSrc *router.CIDR) string {
-	const (
-		ruleV4 = "  - IP-CIDR,%s"
-		ruleV6 = "  - IP-CIDR6,%s"
-	)
-	ip := net.IPAddress(ipSrc.GetIp())
-	if ip.Family().IsIPv4() {
-		return fmt.Sprintf(ruleV4, getIP(ipSrc))
-	}
-	if ip.Family().IsIPv6() {
-		return fmt.Sprintf(ruleV6, getIP(ipSrc))
-	}
-	return ""
-}
-
-func getPrivateIPs() *router.GeoIP {
-	cidr := make([]*router.CIDR, 0, len(privateIPs))
-	for _, ip := range privateIPs {
-		c, err := rule.ParseIP(ip)
-		common.Must(err)
-		cidr = append(cidr, c)
-	}
-	return &router.GeoIP{
-		CountryCode: "PRIVATE",
-		Cidr:        cidr,
+func clashPGeoIP() {
+	v4 := formatIP("  - IP-CIDR,%s", ipV4)
+	v6 := formatIP("  - IP-CIDR6,%s", ipV6)
+	header := []string{"payload:"}
+	if err := writer2File(header, "clashP.yaml", v4, v6); err != nil {
+		log.Fatalln("writer2File err: ", err)
 	}
 }
 
-func main() {
-	fF := flag.String("F", "", "")
-	flag.Parse()
-	
+func v2rayGeoIP() {
 	cidrList := make(map[string][]*router.CIDR)
-	getChinaCidr(cidrList)
-	
+	for _, v4 := range ipV4 {
+		cidr, err := rule.ParseIP(v4)
+		if err != nil {
+			continue
+		}
+		cidrs := append(cidrList[countryCN], cidr)
+		cidrList[countryCN] = cidrs
+	}
+	for _, v6 := range ipV6 {
+		cidr, err := rule.ParseIP(v6)
+		if err != nil {
+			continue
+		}
+		cidrs := append(cidrList[countryCN], cidr)
+		cidrList[countryCN] = cidrs
+	}
 	geoIPList := new(router.GeoIPList)
 	for cc, cidr := range cidrList {
 		geoIPList.Entry = append(geoIPList.Entry, &router.GeoIP{
@@ -135,60 +71,33 @@ func main() {
 			Cidr:        cidr,
 		})
 	}
+	geoIPList.Entry = append(geoIPList.Entry, getPrivateIPs())
 	
-	t := time.Now().Format("2006-01-02 15:04:05")
-	
-	switch *fF {
-	case "clash":
-		ips := make([]string, 0)
-		
-		for _, ipSrc := range getPrivateIPs().GetCidr() {
-			if ip := getIP2Clash(ipSrc); ip != "" {
-				ips = append(ips, ip)
-			}
-		}
-		
-		for _, geo := range geoIPList.GetEntry() {
-			if geo.GetCountryCode() == countryCN {
-				for _, ipSrc := range geo.GetCidr() {
-					if ip := getIP2Clash(ipSrc); ip != "" {
-						ips = append(ips, ip)
-					}
-				}
-			}
-		}
-		header := []string{"# TIME: " + t, "payload:"}
-		if err := pickWriter(header, "geoip.yaml", ips); err != nil {
-			log.Fatalln("pickWriter err: ", err)
-		}
-	case "ip":
-		ips := make([]string, 0)
-		for _, ipSrc := range getPrivateIPs().GetCidr() {
-			ips = append(ips, getIP(ipSrc))
-		}
-		for _, geo := range geoIPList.GetEntry() {
-			if geo.GetCountryCode() == countryCN {
-				for _, ipSrc := range geo.GetCidr() {
-					if ip := getIP(ipSrc); ip != "" {
-						ips = append(ips, ip)
-					}
-				}
-			}
-		}
-		if err := pickWriter(nil, "geoip.txt", ips); err != nil {
-			log.Fatalln("pickWriter err: ", err)
-		}
-	default:
-		geoIPList.Entry = append(geoIPList.Entry, getPrivateIPs())
-		
-		geoIPBytes, err := proto.Marshal(geoIPList)
-		if err != nil {
-			log.Fatalln("error marshalling geoip list:", err)
-		}
-		if err := ioutil.WriteFile("geoip.dat", geoIPBytes, 0644); err != nil {
-			log.Fatalln("error writing geoip to file:", err)
-		}
+	geoIPBytes, err := proto.Marshal(geoIPList)
+	if err != nil {
+		log.Fatalln("error marshalling geoip list:", err)
 	}
-	
+	if err := ioutil.WriteFile("geoip.dat", geoIPBytes, 0644); err != nil {
+		log.Fatalln("error writing geoip to file:", err)
+	}
+}
+
+func command() {
+	fF := flag.String("F", "v2ray", "")
+	flag.Parse()
+	switch *fF {
+	case "clashP":
+		clashPGeoIP()
+	case "ip":
+		ipGeoIP()
+	case "v2ray":
+		fallthrough
+	default:
+		v2rayGeoIP()
+	}
+}
+
+func main() {
+	command()
 	log.Println("geoip has been generated successfully in the directory.")
 }
