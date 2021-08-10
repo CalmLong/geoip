@@ -4,15 +4,13 @@
 
 ## 获取
 
-Github Action 每日 UTC+08:00 2 点自动构建
-
-默认使用 [jsdelivr](https://www.jsdelivr.com/) 提供的加速节点
+Github Action 每日自动构建
 
 |  工具   | 地址  |
 |  :----:  | :----:  |
-| 通用 | [geoip.txt](https://cdn.jsdelivr.net/gh/CalmLong/geoip@release/geoip.txt) |
-| Clash Premium | [clashP.yaml](https://cdn.jsdelivr.net/gh/CalmLong/geoip@release/clashP.yaml) |
-| V2Ray | [geoip.dat](https://cdn.jsdelivr.net/gh/CalmLong/geoip@release/geoip.dat) |
+| 通用 | [geoip.txt](https://raw.githubusercontent.com/CalmLong/geoip/release/geoip.txt) |
+| Clash Premium | [clashP.yaml](https://raw.githubusercontent.com/CalmLong/geoip/release/clashP.yaml) |
+| V2Ray | [geoip.dat](https://raw.githubusercontent.com/CalmLong/geoip/release/geoip.dat) |
 
 上述所有数据均可在 [release](https://github.com/CalmLong/geoip/tree/release) 分支中找到
 
