@@ -19,7 +19,7 @@ jobs:
       - name: Setup Go 1.x.y
         uses: actions/setup-go@v2
         with:
-          go-version: ^1.16
+          go-version: ^1.17
           
       - name: Set variables
         run: |
@@ -32,15 +32,11 @@ jobs:
       - name: Build geoip file
         run: |
           go run geoip
-          go run geoip -F=clashP
-          go run geoip -F=ip
   
       - name: Move files to publish directory
         run: |
           mkdir -p publish
           mv geoip.dat ./publish
-          mv clashP.yaml ./publish
-          mv geoip.txt ./publish
   
       - name: Git push assets to "release" branch
         run: |

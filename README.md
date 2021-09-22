@@ -6,13 +6,7 @@
 
 Github Action 每日自动构建
 
-|  工具   | 地址  |
-|  :----:  | :----:  |
-| 通用 | [geoip.txt](https://raw.githubusercontent.com/CalmLong/geoip/release/geoip.txt) |
-| Clash Premium | [clashP.yaml](https://raw.githubusercontent.com/CalmLong/geoip/release/clashP.yaml) |
-| V2Ray | [geoip.dat](https://raw.githubusercontent.com/CalmLong/geoip/release/geoip.dat) |
-
-上述所有数据均可在 [release](https://github.com/CalmLong/geoip/tree/release) 分支中找到
+**geoip.dat**: [https://raw.githubusercontent.com/CalmLong/geoip/release/geoip.dat](https://raw.githubusercontent.com/CalmLong/geoip/release/geoip.dat)
 
 ### 示例配置
 
@@ -36,17 +30,6 @@ Github Action 每日自动构建
 稍等片刻输出 `geoip.dat`
 
 * 可识别 `https_proxy` 环境变量
-
-现在可以通过 [release](https://github.com/CalmLong/geoip/tree/release) 分支下载已经输出的文件，由 Github Action 每日 UTC+08:00 2 点自动构建
-
-### 命令参数
-
-所有参数默认为关闭状态
-
-* `-F` 输出指定程序格式的数据，默认为 `v2ray`
-    * `clash`
-    * `ip`
-    * `v2ray`
 
 ## 引用以下项目
 

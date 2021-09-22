@@ -1,14 +1,19 @@
 package main
 
 import (
-	"flag"
+	"bufio"
 	"github.com/golang/protobuf/proto"
+	"github.com/v2fly/v2ray-core/v4/common"
 	"github.com/v2fly/v2ray-core/v4/infra/conf/rule"
 	"io/ioutil"
 	"log"
+	"net/http"
 	
 	"github.com/v2fly/v2ray-core/v4/app/router"
 )
+
+const countryCN = "CN"
+const chinaIP = "https://raw.githubusercontent.com/reflect2/china-ip-list/release/ip.txt"
 
 var privateIPs = []string{
 	"10.0.0.0/8",
@@ -31,39 +36,51 @@ var privateIPs = []string{
 	"fe80::/10",
 }
 
-func ipGeoIP() {
-	if err := writer2File(nil, "geoip.txt", ipV4, ipV6); err != nil {
-		log.Fatalln("writer2File err: ", err)
+func getPrivateIPs() *router.GeoIP {
+	cidr := make([]*router.CIDR, 0, len(privateIPs))
+	for _, ip := range privateIPs {
+		c, err := rule.ParseIP(ip)
+		common.Must(err)
+		cidr = append(cidr, c)
+	}
+	return &router.GeoIP{
+		CountryCode: "PRIVATE",
+		Cidr:        cidr,
 	}
 }
 
-func clashPGeoIP() {
-	v4 := formatIP("  - IP-CIDR,%s", ipV4)
-	v6 := formatIP("  - IP-CIDR6,%s", ipV6)
-	header := []string{"payload:"}
-	if err := writer2File(header, "clashP.yaml", v4, v6); err != nil {
-		log.Fatalln("writer2File err: ", err)
+func getIPList() []string {
+	resp, err := http.Get(chinaIP)
+	if err != nil {
+		log.Fatalln(err)
 	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	
+	ipList := make([]string, 0)
+	
+	sc := bufio.NewScanner(resp.Body)
+	for sc.Scan() {
+		ipList = append(ipList, sc.Text())
+	}
+	
+	return ipList
 }
 
-func v2rayGeoIP() {
+func main() {
+	ipList := getIPList()
 	cidrList := make(map[string][]*router.CIDR)
-	for _, v4 := range ipV4 {
-		cidr, err := rule.ParseIP(v4)
+	
+	for i := 0; i < len(ipList); i++ {
+		cidr, err := rule.ParseIP(ipList[i])
 		if err != nil {
 			continue
 		}
 		cidrs := append(cidrList[countryCN], cidr)
 		cidrList[countryCN] = cidrs
 	}
-	for _, v6 := range ipV6 {
-		cidr, err := rule.ParseIP(v6)
-		if err != nil {
-			continue
-		}
-		cidrs := append(cidrList[countryCN], cidr)
-		cidrList[countryCN] = cidrs
-	}
+	
 	geoIPList := new(router.GeoIPList)
 	for cc, cidr := range cidrList {
 		geoIPList.Entry = append(geoIPList.Entry, &router.GeoIP{
@@ -80,24 +97,4 @@ func v2rayGeoIP() {
 	if err := ioutil.WriteFile("geoip.dat", geoIPBytes, 0644); err != nil {
 		log.Fatalln("error writing geoip to file:", err)
 	}
-}
-
-func command() {
-	fF := flag.String("F", "v2ray", "")
-	flag.Parse()
-	switch *fF {
-	case "clashP":
-		clashPGeoIP()
-	case "ip":
-		ipGeoIP()
-	case "v2ray":
-		fallthrough
-	default:
-		v2rayGeoIP()
-	}
-}
-
-func main() {
-	command()
-	log.Println("geoip has been generated successfully in the directory.")
 }
