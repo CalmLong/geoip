@@ -35,3 +35,4 @@ Github Action 每日自动构建
 
 * [github.com/gaoyifan/china-operator-ip](https://github.com/gaoyifan/china-operator-ip)
 * [github.com/v2fly/v2ray-core](https://github.com/v2fly/v2ray-core)
+* [APNIC](https://ftp.apnic.net/stats/apnic/)
