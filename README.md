@@ -21,16 +21,6 @@ Github Action 每日自动构建
       }
 ```
 
-## 运行
-
-```bash
-./geoip
-```
-
-稍等片刻输出 `geoip.dat`
-
-* 可识别 `https_proxy` 环境变量
-
 ## 引用以下项目
 
 * [github.com/gaoyifan/china-operator-ip](https://github.com/gaoyifan/china-operator-ip)
