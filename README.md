@@ -23,7 +23,5 @@ Github Action 每日自动构建
 
 ## 引用以下项目
 
-* [github.com/gaoyifan/china-operator-ip](https://github.com/gaoyifan/china-operator-ip)
-* [github.com/17mon/china_ip_list](https://github.com/17mon/china_ip_list)
+* [github.com/reflect2/china-ip-list](https://github.com/reflect2/china-ip-list)
 * [github.com/v2fly/v2ray-core](https://github.com/v2fly/v2ray-core)
-* [APNIC](https://ftp.apnic.net/stats/apnic/)
