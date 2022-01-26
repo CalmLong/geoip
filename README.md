@@ -23,5 +23,5 @@ Github Action 每日自动构建
 
 ## 引用以下项目
 
-* [github.com/reflect2/china-ip-list](https://github.com/reflect2/china-ip-list)
+* [github.com/reflect2/china-ip-list](https://github.com/hidns/china-ip-list)
 * [github.com/v2fly/v2ray-core](https://github.com/v2fly/v2ray-core)
