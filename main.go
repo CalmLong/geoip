@@ -13,7 +13,7 @@ import (
 )
 
 const countryCN = "CN"
-const chinaIP = "https://raw.githubusercontent.com/hidns/china-ip-list/release/ip.txt"
+const chinaIP = "https://raw.githubusercontent.com/carrnot/china-ip-list/release/ip.txt"
 
 var privateIPs = []string{
 	"10.0.0.0/8",
