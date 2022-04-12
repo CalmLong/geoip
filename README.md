@@ -24,4 +24,4 @@ Github Action 每日自动构建
 ## 引用以下项目
 
 * [github.com/carrnot/china-ip-list](https://github.com/carrnot/china-ip-list)
-* [github.com/v2fly/v2ray-core](https://github.com/v2fly/v2ray-core)
+* [github.com/v2fly/geoip](https://github.com/v2fly/geoip)

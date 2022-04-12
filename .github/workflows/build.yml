@@ -31,12 +31,7 @@ jobs:
 
       - name: Build geoip file
         run: |
-          go run geoip
-  
-      - name: Move files to publish directory
-        run: |
-          mkdir -p publish
-          mv geoip.dat ./publish
+          go run github.com/v2fly/geoip@latest -c config.json
   
       - name: Git push assets to "release" branch
         run: |
