@@ -2,14 +2,14 @@ package main
 
 import (
 	"bufio"
-	"github.com/golang/protobuf/proto"
-	"github.com/v2fly/v2ray-core/v4/common"
-	"github.com/v2fly/v2ray-core/v4/infra/conf/rule"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	
-	"github.com/v2fly/v2ray-core/v4/app/router"
+	"github.com/golang/protobuf/proto"
+	"github.com/v2fly/v2ray-core/v5/app/router/routercommon"
+	"github.com/v2fly/v2ray-core/v5/common"
+	"github.com/v2fly/v2ray-core/v5/infra/conf/rule"
 )
 
 const countryCN = "CN"
@@ -36,14 +36,14 @@ var privateIPs = []string{
 	"fe80::/10",
 }
 
-func getPrivateIPs() *router.GeoIP {
-	cidr := make([]*router.CIDR, 0, len(privateIPs))
+func getPrivateIPs() *routercommon.GeoIP {
+	cidr := make([]*routercommon.CIDR, 0, len(privateIPs))
 	for _, ip := range privateIPs {
 		c, err := rule.ParseIP(ip)
 		common.Must(err)
 		cidr = append(cidr, c)
 	}
-	return &router.GeoIP{
+	return &routercommon.GeoIP{
 		CountryCode: "PRIVATE",
 		Cidr:        cidr,
 	}
@@ -70,7 +70,7 @@ func getIPList() []string {
 
 func main() {
 	ipList := getIPList()
-	cidrList := make(map[string][]*router.CIDR)
+	cidrList := make(map[string][]*routercommon.CIDR)
 	
 	for i := 0; i < len(ipList); i++ {
 		cidr, err := rule.ParseIP(ipList[i])
@@ -81,9 +81,9 @@ func main() {
 		cidrList[countryCN] = cidrs
 	}
 	
-	geoIPList := new(router.GeoIPList)
+	geoIPList := new(routercommon.GeoIPList)
 	for cc, cidr := range cidrList {
-		geoIPList.Entry = append(geoIPList.Entry, &router.GeoIP{
+		geoIPList.Entry = append(geoIPList.Entry, &routercommon.GeoIP{
 			CountryCode: cc,
 			Cidr:        cidr,
 		})
@@ -94,7 +94,7 @@ func main() {
 	if err != nil {
 		log.Fatalln("error marshalling geoip list:", err)
 	}
-	if err := ioutil.WriteFile("geoip.dat", geoIPBytes, 0644); err != nil {
+	if err = os.WriteFile("geoip.dat", geoIPBytes, 0644); err != nil {
 		log.Fatalln("error writing geoip to file:", err)
 	}
 }
