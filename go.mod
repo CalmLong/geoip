@@ -1,18 +1,21 @@
 module geoip
 
-go 1.17
+go 1.18
 
 require (
 	github.com/golang/protobuf v1.5.2
-	github.com/v2fly/v2ray-core/v4 v4.44.0
+	github.com/v2fly/v2ray-core/v5 v5.0.3
 )
 
 require (
+	github.com/lucas-clemente/quic-go v0.24.0 // indirect
+	github.com/marten-seemann/qtls-go1-17 v0.1.0 // indirect
 	github.com/pires/go-proxyproto v0.6.1 // indirect
-	go.starlark.net v0.0.0-20210901212718-87f333178d59 // indirect
-	go4.org/intern v0.0.0-20210108033219-3eb7198706b2 // indirect
-	go4.org/unsafe/assume-no-moving-gc v0.0.0-20201222180813-1025295fd063 // indirect
-	golang.org/x/sys v0.0.0-20210903071746-97244b99971b // indirect
+	go.starlark.net v0.0.0-20211203141949-70c0e40ae128 // indirect
+	go4.org/intern v0.0.0-20211027215823-ae77deb06f29 // indirect
+	go4.org/unsafe/assume-no-moving-gc v0.0.0-20211027215541-db492cf91b37 // indirect
+	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e // indirect
+	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
-	inet.af/netaddr v0.0.0-20210903134321-85fa6c94624e // indirect
+	inet.af/netaddr v0.0.0-20211027220019-c74959edd3b6 // indirect
 )
